@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useTheme } from '@/context/ThemeContext';
 import Spoiler from '@/components/Spoiler';
+import ImageLightbox from '@/components/ImageLightbox';
 import { buildEmojiUrl, getEmojiCategory } from '@/config/emoji';
 
 const ContentRenderer = ({ content, activeTag, onTagClick }) => {
   const { themeColor, currentFont } = useTheme();
+  const [lightboxImage, setLightboxImage] = useState(null);
   // 解析内容，分离文本和标签
   const parseContent = (text) => {
     const parts = [];
@@ -61,11 +63,8 @@ const ContentRenderer = ({ content, activeTag, onTagClick }) => {
 
   // 渲染markdown文本（不包含标签�?
   const renderMarkdownText = (text) => {
-    // 处理换行�?
-    let processedText = text.replace(/\n/g, '  \n');
-
     // 保留行首的空格 - 直接使用unicode非断行空格
-    processedText = processedText.replace(/^( +)/gm, (match, spaces) => {
+    let processedText = text.replace(/^( +)/gm, (match, spaces) => {
       // 将行首空格替换为unicode非断行空格
       return spaces.split('').map(() => '\u00A0').join('');
     });
@@ -276,6 +275,33 @@ const ContentRenderer = ({ content, activeTag, onTagClick }) => {
                         strong: ({node, ...props}) => <strong className="font-bold" {...props} />,
                         em: ({node, ...props}) => <em className="italic" {...props} />,
                         br: () => <br />,
+                        code: ({node, inline, className, children, ...props}) => {
+                          if (inline) {
+                            return (
+                              <code
+                                className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 text-sm font-mono"
+                                {...props}
+                              >
+                                {children}
+                              </code>
+                            );
+                          }
+                          return (
+                            <code className={className} {...props}>
+                              {children}
+                            </code>
+                          );
+                        },
+                        pre: ({node, children, ...props}) => {
+                          return (
+                            <pre
+                              className="block p-4 my-3 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-x-auto"
+                              {...props}
+                            >
+                              {children}
+                            </pre>
+                          );
+                        },
                         img: ({node, ...props}) => {
                           const isEmoji = (props?.alt || '').startsWith('emoji:') || (props?.src || '').includes('/emoji/');
                           if (isEmoji) {
@@ -303,7 +329,13 @@ const ContentRenderer = ({ content, activeTag, onTagClick }) => {
                               />
                             );
                           }
-                          return <img {...props} />;
+                          return (
+                            <img
+                              {...props}
+                              className="cursor-zoom-in hover:opacity-90 transition-opacity"
+                              onClick={() => setLightboxImage({ src: props.src, alt: props.alt })}
+                            />
+                          );
                         },
                       }}
                       remarkPlugins={[remarkEmojiShortcode]}
@@ -372,6 +404,33 @@ const ContentRenderer = ({ content, activeTag, onTagClick }) => {
                               strong: ({node, ...props}) => <strong className="font-bold" {...props} />,
                               em: ({node, ...props}) => <em className="italic" {...props} />,
                               br: () => <br />,
+                              code: ({node, inline, className, children, ...props}) => {
+                                if (inline) {
+                                  return (
+                                    <code
+                                      className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-pink-600 dark:text-pink-400 text-sm font-mono"
+                                      {...props}
+                                    >
+                                      {children}
+                                    </code>
+                                  );
+                                }
+                                return (
+                                  <code className={className} {...props}>
+                                    {children}
+                                  </code>
+                                );
+                              },
+                              pre: ({node, children, ...props}) => {
+                                return (
+                                  <pre
+                                    className="block p-4 my-3 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-x-auto"
+                                    {...props}
+                                  >
+                                    {children}
+                                  </pre>
+                                );
+                              },
                               img: ({node, ...props}) => {
                                 const isEmoji = (props?.alt || '').startsWith('emoji:') || (props?.src || '').includes('/emoji/');
                                 if (isEmoji) {
@@ -399,7 +458,13 @@ const ContentRenderer = ({ content, activeTag, onTagClick }) => {
                                     />
                                   );
                                 }
-                                return <img {...props} />;
+                                return (
+                                  <img
+                                    {...props}
+                                    className="cursor-zoom-in hover:opacity-90 transition-opacity"
+                                    onClick={() => setLightboxImage({ src: props.src, alt: props.alt })}
+                                  />
+                                );
                               },
                             }}
                             remarkPlugins={[remarkEmojiShortcode]}
@@ -421,6 +486,14 @@ const ContentRenderer = ({ content, activeTag, onTagClick }) => {
           );
         }
       })}
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        isOpen={!!lightboxImage}
+        onClose={() => setLightboxImage(null)}
+        src={lightboxImage?.src}
+        alt={lightboxImage?.alt}
+      />
     </div>
   );
 };
