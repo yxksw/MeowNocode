@@ -82,6 +82,10 @@ const ContentRenderer = ({ content, activeTag, onTagClick }) => {
       return `${match[0] === ' ' ? ' ' : ''}# ${p1}`;
     });
 
+    // 处理换行：将非列表项后的换行转换为强制换行（两个空格+换行）
+    // 但保留列表项后的普通换行，避免列表延续
+    processedText = processedText.replace(/(\n)(?![\s]*[-*+]|\d+\.\s)/g, '  \n');
+
     return processedText;
   };
 
